@@ -1,1 +1,1226 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#090b13">
+<title>LUCKY — Wheel of Fortune</title>
+
+<style>
+* {
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+:root {
+  --bg:#090b13;
+  --panel:#151a29;
+  --panel2:#20263a;
+  --purple:#9875ff;
+  --text:#f5f5ff;
+  --muted:#9299b0;
+  --border:#ffffff15;
+}
+
+body {
+  margin:0;
+  background:
+    radial-gradient(ellipse at 50% 0%,#282044,transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+  min-height:100vh;
+}
+
+button,input {
+  font:inherit;
+}
+
+button {
+  border:0;
+  cursor:pointer;
+  color:white;
+}
+
+.app {
+  max-width:520px;
+  margin:auto;
+  padding:20px 16px 40px;
+}
+
+header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+}
+
+.logo {
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:2px;
+}
+
+.logo span {
+  color:var(--purple);
+}
+
+.subtitle {
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:2px;
+  margin-top:4px;
+}
+
+.icon-btn {
+  width:45px;
+  height:45px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:#ffffff0b;
+  font-size:21px;
+}
+
+.heading {
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.heading h1 {
+  font-size:25px;
+  margin:0 0 8px;
+}
+
+.heading p {
+  font-size:13px;
+  color:var(--muted);
+  margin:0;
+}
+
+.wheel-area {
+  width:100%;
+  max-width:410px;
+  aspect-ratio:1;
+  margin:0 auto 20px;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.glow {
+  position:absolute;
+  width:85%;
+  height:85%;
+  border-radius:50%;
+  background:#9875ff;
+  filter:blur(45px);
+  opacity:.2;
+}
+
+canvas {
+  position:relative;
+  z-index:2;
+  width:100%;
+  height:100%;
+}
+
+.pointer {
+  position:absolute;
+  z-index:5;
+  top:-5px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+  border-left:17px solid transparent;
+  border-right:17px solid transparent;
+  border-top:36px solid white;
+  filter:drop-shadow(0 3px 7px #000);
+}
+
+.info {
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  margin-bottom:18px;
+}
+
+.spin-btn {
+  width:100%;
+  height:62px;
+  border-radius:18px;
+  background:linear-gradient(110deg,#8b5cf6,#6366f1,#a855f7);
+  font-weight:900;
+  font-size:17px;
+  letter-spacing:1px;
+  box-shadow:0 8px 30px #825cf64a;
+}
+
+.spin-btn:active {
+  transform:scale(.97);
+}
+
+.spin-btn:disabled {
+  opacity:.5;
+}
+
+.actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+
+.secondary {
+  height:48px;
+  border:1px solid var(--border);
+  background:#ffffff09;
+  border-radius:14px;
+  color:#d5d3e8;
+  font-size:13px;
+}
+
+.stats {
+  display:flex;
+  justify-content:space-between;
+  padding:17px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:17px;
+  margin-top:24px;
+}
+
+.stat-label {
+  color:var(--muted);
+  font-size:10px;
+}
+
+.stat-value {
+  font-size:19px;
+  font-weight:900;
+  margin-top:6px;
+}
+
+/* Затемнение */
+
+.overlay {
+  position:fixed;
+  inset:0;
+  z-index:10;
+  background:#000b;
+  opacity:0;
+  visibility:hidden;
+  transition:.3s;
+}
+
+.overlay.open {
+  opacity:1;
+  visibility:visible;
+}
+
+/* Панель вариантов */
+
+.drawer {
+  position:fixed;
+  z-index:11;
+  top:0;
+  right:0;
+  bottom:0;
+  width:min(430px,94%);
+  background:#101522;
+  border-left:1px solid var(--border);
+  padding:20px 17px;
+  transform:translateX(105%);
+  transition:.3s cubic-bezier(.2,.8,.2,1);
+  overflow-y:auto;
+}
+
+.drawer.open {
+  transform:translateX(0);
+}
+
+.drawer-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:22px;
+}
+
+.drawer-header h2 {
+  font-size:21px;
+  margin:0;
+}
+
+.close-btn {
+  width:40px;
+  height:40px;
+  border-radius:13px;
+  background:#ffffff12;
+  font-size:20px;
+}
+
+.drawer-description {
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:18px;
+  line-height:1.5;
+}
+
+/* Список вариантов */
+
+.option-list {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.option-row {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  animation:appear .2s ease;
+}
+
+@keyframes appear {
+  from {
+    opacity:0;
+    transform:translateY(7px);
+  }
+  to {
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+.option-number {
+  color:#727b98;
+  font-size:12px;
+  width:20px;
+  flex-shrink:0;
+  text-align:center;
+}
+
+.option-input {
+  min-width:0;
+  flex:1;
+  height:57px;
+  border:2px solid #ffffff20;
+  background:#1b2132;
+  border-radius:11px;
+  padding:0 12px;
+  color:white;
+  font-size:15px;
+  outline:none;
+}
+
+.option-input:focus {
+  border-color:var(--purple);
+  background:#24243b;
+}
+
+.delete-btn {
+  width:46px;
+  height:46px;
+  flex-shrink:0;
+  border-radius:12px;
+  background:#ff47571a;
+  border:1px solid #ff475735;
+  font-size:19px;
+  transition:.2s;
+}
+
+.delete-btn:active {
+  background:#ff475755;
+  transform:scale(.9);
+}
+
+/* Добавить вариант */
+
+.add-btn {
+  width:100%;
+  height:60px;
+  margin-top:17px;
+  background:#9875ff14;
+  border:2px dashed #9875ff77;
+  color:#bda8ff;
+  border-radius:13px;
+  font-size:28px;
+  transition:.2s;
+}
+
+.add-btn:active {
+  background:#9875ff35;
+  transform:scale(.98);
+}
+
+.add-btn:disabled {
+  opacity:.3;
+}
+
+/* Нижняя часть панели */
+
+.drawer-footer {
+  margin-top:25px;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+}
+
+.footer-title {
+  color:var(--muted);
+  font-size:11px;
+  margin-bottom:12px;
+  letter-spacing:1px;
+}
+
+.footer-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+
+.footer-btn {
+  padding:13px 5px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  font-size:12px;
+}
+
+.full-btn {
+  width:100%;
+  padding:13px;
+  margin-top:9px;
+  background:#ffffff0b;
+  border:1px solid var(--border);
+  border-radius:12px;
+  font-size:12px;
+}
+
+/* Пресеты */
+
+.presets {
+  display:grid;
+  gap:9px;
+  margin-top:12px;
+}
+
+.preset {
+  padding:14px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  text-align:left;
+  font-size:13px;
+}
+
+/* Результат */
+
+.modal-bg {
+  position:fixed;
+  inset:0;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:#000c;
+  opacity:0;
+  visibility:hidden;
+  transition:.3s;
+}
+
+.modal-bg.show {
+  opacity:1;
+  visibility:visible;
+}
+
+.modal {
+  width:100%;
+  max-width:370px;
+  padding:27px 21px;
+  background:linear-gradient(145deg,#252440,#111624);
+  border:1px solid #ffffff20;
+  border-radius:24px;
+  text-align:center;
+  transform:scale(.85);
+  transition:.3s;
+}
+
+.modal-bg.show .modal {
+  transform:scale(1);
+}
+
+.trophy {
+  font-size:43px;
+}
+
+.winner-label {
+  font-size:11px;
+  color:var(--muted);
+  letter-spacing:2px;
+  margin-top:12px;
+}
+
+.winner-text {
+  font-size:25px;
+  font-weight:900;
+  margin:20px 0;
+  overflow-wrap:anywhere;
+}
+
+.modal-btn {
+  width:100%;
+  padding:15px;
+  margin-top:9px;
+  border-radius:13px;
+  background:linear-gradient(100deg,#8b5cf6,#6366f1);
+  font-weight:700;
+}
+
+.modal-btn.remove {
+  background:#ffffff0d;
+  border:1px solid var(--border);
+  color:#d5caff;
+}
+
+.confetti {
+  position:fixed;
+  z-index:30;
+  pointer-events:none;
+  width:8px;
+  height:12px;
+  animation:fall 2.5s linear forwards;
+}
+
+@keyframes fall {
+  to {
+    transform:translate(var(--x),100vh) rotate(900deg);
+    opacity:0;
+  }
+}
+
+@media(max-width:360px) {
+  .app {
+    padding:16px 12px 30px;
+  }
+  .heading h1 {
+    font-size:22px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+  <div>
+    <div class="logo">LUCKY<span>.</span></div>
+    <div class="subtitle">WHEEL OF FORTUNE</div>
+  </div>
+  <button class="icon-btn" onclick="openDrawer()">☰</button>
+</header>
+
+<div class="heading">
+  <h1>Колесо фортуны</h1>
+  <p>Пусть случай решит за тебя</p>
+</div>
+
+<div class="wheel-area">
+  <div class="glow"></div>
+  <div class="pointer"></div>
+  <canvas id="wheel"></canvas>
+</div>
+
+<div class="info" id="info">Готово к вращению ✦</div>
+
+<button class="spin-btn" id="spinBtn" onclick="spin()">
+  ✦ КРУТИТЬ КОЛЕСО
+</button>
+
+<div class="actions">
+  <button class="secondary" onclick="openDrawer()">✎ Варианты</button>
+  <button class="secondary" onclick="shuffle()">⤨ Перемешать</button>
+</div>
+
+<div class="stats">
+  <div>
+    <div class="stat-label">ВАРИАНТОВ</div>
+    <div class="stat-value" id="count">8</div>
+  </div>
+  <div>
+    <div class="stat-label">ВРАЩЕНИЙ</div>
+    <div class="stat-value" id="spins">0</div>
+  </div>
+  <div>
+    <div class="stat-label">СТАТУС</div>
+    <div class="stat-value" style="color:#a78bfa">● LIVE</div>
+  </div>
+</div>
+
+</div>
+
+<!-- ПАНЕЛЬ ВАРИАНТОВ -->
+
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+
+<div class="drawer" id="drawer">
+
+  <div class="drawer-header">
+    <h2>Мои варианты</h2>
+    <button class="close-btn" onclick="closeDrawer()">✕</button>
+  </div>
+
+  <div class="drawer-description">
+    Нажми на название, чтобы изменить его.
+    Нажми на корзину, чтобы удалить вариант.
+  </div>
+
+  <div class="option-list" id="optionList"></div>
+
+  <button class="add-btn" id="addBtn" onclick="addOption()">＋</button>
+
+  <div class="drawer-description" id="limitInfo" style="text-align:center;margin-top:9px">
+    0 / 100 вариантов
+  </div>
+
+  <div class="drawer-footer">
+
+    <div class="footer-title">УПРАВЛЕНИЕ</div>
+
+    <div class="footer-actions">
+      <button class="footer-btn" onclick="shuffle()">⤨ Перемешать</button>
+      <button class="footer-btn" onclick="resetOptions()">↺ Сбросить</button>
+    </div>
+
+    <div class="footer-title" style="margin-top:22px">ГОТОВЫЕ ПРЕСЕТЫ</div>
+
+    <div class="presets">
+      <button class="preset" onclick="preset('shop')">🛒 Кто идёт в магазин?</button>
+      <button class="preset" onclick="preset('games')">🎮 Во что поиграть?</button>
+      <button class="preset" onclick="preset('truth')">🎲 Правда или действие</button>
+      <button class="preset" onclick="preset('food')">🍕 Что поесть?</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ОКНО ПОБЕДИТЕЛЯ -->
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="trophy">🏆</div>
+    <div class="winner-label">СЛУЧАЙ СДЕЛАЛ ВЫБОР</div>
+    <div class="winner-text" id="winnerText"></div>
+
+    <button class="modal-btn" onclick="closeModal();spin()">
+      ↻ Крутить ещё раз
+    </button>
+
+    <button class="modal-btn remove" onclick="removeWinner()">
+      🗑 Убрать этот вариант
+    </button>
+
+    <button class="footer-btn" style="width:100%;margin-top:10px"
+      onclick="closeModal()">Закрыть</button>
+  </div>
+</div>
+
+<script>
+
+/* =================================
+   НАСТРОЙКИ И ХРАНИЛИЩЕ
+================================= */
+
+const STORAGE_KEY = 'lucky_wheel_options_v2';
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+
+const list = document.getElementById('optionList');
+
+let options = loadOptions();
+let rotation = 0;
+let spinning = false;
+let totalSpins = 0;
+let winnerIndex = -1;
+let dpr = 1;
+
+const TAU = Math.PI*2;
+  // ==================================
+// LUCKY — SOUND ENGINE
+// ==================================
+
+let audioCtx = null;
+
+function initAudio() {
+  if(!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if(audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+// Механический щелчок колеса
+function wheelTick(power = 1) {
+  if(!audioCtx) return;
+
+  const now = audioCtx.currentTime;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(1250 + Math.random()*250,now);
+  osc.frequency.exponentialRampToValueAtTime(450,now+0.035);
+
+  filter.type = 'lowpass';
+  filter.frequency.value = 3000;
+
+  gain.gain.setValueAtTime(0.0001,now);
+  gain.gain.exponentialRampToValueAtTime(
+    Math.max(0.0002,0.055*power),
+    now+0.003
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now+0.045
+  );
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start(now);
+  osc.stop(now+0.05);
+}
+
+// Финальный звук
+function winnerSound() {
+  if(!audioCtx) return;
+
+  const now = audioCtx.currentTime;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(660,now);
+  osc.frequency.exponentialRampToValueAtTime(990,now+0.18);
+
+  gain.gain.setValueAtTime(0.0001,now);
+  gain.gain.exponentialRampToValueAtTime(0.12,now+0.025);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+0.55);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.start(now);
+  osc.stop(now+0.6);
+}
+
+function loadOptions() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    if(saved) {
+      const data = JSON.parse(saved);
+
+      if(Array.isArray(data) && data.length >= 2) {
+        return data
+          .slice(0,100)
+          .map(x=>String(x).slice(0,100));
+      }
+    }
+  } catch(e) {}
+
+  return [
+    'Игрок 1','Игрок 2','Игрок 3','Игрок 4',
+    'Игрок 5','Игрок 6','Игрок 7','Игрок 8'
+  ];
+}
+
+function saveStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(options));
+  } catch(e) {
+    console.log('Не удалось сохранить варианты',e);
+  }
+}
+
+/* =================================
+   ЦВЕТА КОЛЕСА
+================================= */
+
+function getColor(i,n) {
+  const hue = (i*360/n)%360;
+
+  const light = i%2===0 ? 0.47 : 0.39;
+  const sat = i%3===0 ? 0.9 : 0.82;
+
+  return `hsl(${hue},${sat*100}%,${light*100}%)`;
+}
+
+/* =================================
+   CANVAS
+================================= */
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+
+  dpr = Math.min(window.devicePixelRatio||1,2);
+
+  canvas.width = rect.width*dpr;
+  canvas.height = rect.height*dpr;
+
+  drawWheel();
+}
+
+function drawWheel() {
+  const w=canvas.width;
+  const h=canvas.height;
+
+  const cx=w/2;
+  const cy=h/2;
+  const radius=Math.min(cx,cy)*0.94;
+
+  ctx.clearRect(0,0,w,h);
+
+  const n=options.length;
+
+  if(n===0) return;
+
+  const step=TAU/n;
+
+  for(let i=0;i<n;i++) {
+
+    const start=rotation-Math.PI/2+i*step;
+    const end=start+step;
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,radius,start,end);
+    ctx.closePath();
+
+    ctx.fillStyle=getColor(i,n);
+    ctx.fill();
+
+    ctx.strokeStyle='#ffffff45';
+    ctx.lineWidth=1.5*dpr;
+    ctx.stroke();
+
+    // Текст сектора
+    ctx.save();
+
+    ctx.translate(cx,cy);
+    ctx.rotate(start+step/2);
+
+    const fontSize=Math.max(
+      6*dpr,
+      Math.min(16*dpr,step*radius*.45)
+    );
+
+    ctx.font=`bold ${fontSize}px Arial`;
+    ctx.fillStyle='#fff';
+    ctx.textAlign='right';
+    ctx.textBaseline='middle';
+    ctx.shadowColor='#000b';
+    ctx.shadowBlur=3*dpr;
+
+    let text=options[i];
+
+    const maxWidth=radius*.65;
+
+    while(ctx.measureText(text).width>maxWidth && text.length>2) {
+      text=text.slice(0,-2)+'…';
+    }
+
+    ctx.fillText(text,radius*.87,0,maxWidth);
+
+    ctx.restore();
+  }
+
+  // Внешняя рамка
+  ctx.beginPath();
+  ctx.arc(cx,cy,radius,0,TAU);
+  ctx.strokeStyle='#ffffffaa';
+  ctx.lineWidth=4*dpr;
+  ctx.stroke();
+
+  // Центральная кнопка
+  ctx.beginPath();
+  ctx.arc(cx,cy,radius*.105,0,TAU);
+
+  const gradient=ctx.createRadialGradient(
+    cx-radius*.03,cy-radius*.03,0,
+    cx,cy,radius*.11
+  );
+
+  gradient.addColorStop(0,'#fff');
+  gradient.addColorStop(.5,'#c4b5fd');
+  gradient.addColorStop(1,'#7550d8');
+
+  ctx.fillStyle=gradient;
+  ctx.fill();
+}
+
+/* =================================
+   РЕДАКТОР ВАРИАНТОВ
+================================= */
+
+function renderEditor(focusLast=false) {
+
+  list.innerHTML='';
+
+  options.forEach((value,index)=>{
+
+    const row=document.createElement('div');
+    row.className='option-row';
+
+    const number=document.createElement('div');
+    number.className='option-number';
+    number.textContent=index+1;
+
+    const input=document.createElement('input');
+    input.className='option-input';
+    input.type='text';
+    input.maxLength=100;
+    input.value=value;
+    input.placeholder='Название варианта';
+
+    input.addEventListener('input',()=>{
+      options[index]=input.value;
+
+      saveStorage();
+      drawWheel();
+    });
+
+    const del=document.createElement('button');
+    del.className='delete-btn';
+    del.textContent='🗑';
+    del.title='Удалить вариант';
+
+    del.addEventListener('click',()=>{
+      if(spinning) return;
+
+      options.splice(index,1);
+
+      if(options.length<2) {
+        options.push('Новый вариант');
+      }
+
+      saveStorage();
+      updateUI();
+    });
+
+    row.appendChild(number);
+    row.appendChild(input);
+    row.appendChild(del);
+
+    list.appendChild(row);
+  });
+
+  document.getElementById('addBtn').disabled=options.length>=100;
+
+  document.getElementById('limitInfo').textContent=
+    options.length+' / 100 вариантов';
+
+  if(focusLast) {
+    const inputs=list.querySelectorAll('input');
+    const last=inputs[inputs.length-1];
+
+    if(last) {
+      last.focus();
+      last.select();
+    }
+  }
+}
+
+function addOption() {
+  if(spinning || options.length>=100) return;
+
+  options.push('Новый вариант');
+
+  saveStorage();
+  updateUI(true);
+}
+
+function updateUI(focusLast=false) {
+  renderEditor(focusLast);
+
+  document.getElementById('count').textContent=options.length;
+
+  drawWheel();
+  saveStorage();
+}
+
+/* =================================
+   ПЕРЕМЕШИВАНИЕ
+================================= */
+
+function shuffle() {
+  if(spinning) return;
+
+  for(let i=options.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+
+    [options[i],options[j]]=[options[j],options[i]];
+  }
+
+  updateUI();
+}
+
+/* =================================
+   ПРЕСЕТЫ
+================================= */
+
+const presets = {
+
+  shop:[
+    'Игрок 1',
+    'Игрок 2',
+    'Игрок 3',
+    'Игрок 4'
+  ],
+
+  games:[
+    'Minecraft',
+    'Roblox',
+    'Brawl Stars',
+    'Standoff 2',
+    'Terraria',
+    'Among Us',
+    'Geometry Dash'
+  ],
+
+  truth:[
+    'Правда',
+    'Действие'
+  ],
+
+  food:[
+    'Пицца',
+    'Бургер',
+    'Суши',
+    'Шаурма',
+    'Паста',
+    'Картошка'
+  ]
+
+};
+
+function preset(name) {
+  if(spinning) return;
+
+  options=[...presets[name]];
+
+  updateUI();
+}
+
+/* =================================
+   СБРОС
+================================= */
+
+function resetOptions() {
+  if(spinning) return;
+
+  if(!confirm('Сбросить все варианты?')) return;
+
+  options=[
+    'Вариант 1',
+    'Вариант 2',
+    'Вариант 3',
+    'Вариант 4'
+  ];
+
+  updateUI();
+}
+
+/* =================================
+   ВРАЩЕНИЕ
+================================= */
+
+function spin() {
+
+  if(spinning || options.length<2) {
+    if(options.length<2) alert('Добавь минимум 2 варианта!');
+    return;
+  }
+
+  spinning=true;
+initAudio();
+  document.getElementById('spinBtn').disabled=true;
+  document.getElementById('info').textContent='Колесо вращается...';
+
+  const n=options.length;
+  const step=TAU/n;
+
+  winnerIndex=Math.floor(Math.random()*n);
+
+  const targetCenter=winnerIndex*step+step/2;
+
+  const current=((rotation%TAU)+TAU)%TAU;
+
+  const target=((-targetCenter-current)%TAU+TAU)%TAU;
+
+  const turns=6+Math.floor(Math.random()*4);
+  const totalAngle=turns*TAU+target;
+
+  const startRotation=rotation;
+  const duration=7000;
+  const startTime=performance.now();
+
+  function animate(now) {
+    
+let lastSector = Math.floor(startRotation/step);
+    const t=Math.min((now-startTime)/duration,1);
+
+    const eased=1-Math.pow(1-t,4.5);
+
+    rotation=startRotation+totalAngle*eased;
+// Отслеживаем прохождение секторов
+const currentSector = Math.floor(rotation/step);
+
+if(currentSector !== lastSector) {
+  lastSector = currentSector;
+
+  // Чем медленнее колесо, тем тише звук
+  const power = Math.max(0.12,1-t);
+
+  wheelTick(power);
+}
+    drawWheel();
+
+    if(t<1) {
+      requestAnimationFrame(animate);
+    } else {
+
+      rotation=startRotation+totalAngle;
+
+      drawWheel();
+
+      winnerSound();
+      
+      spinning=false;
+
+      totalSpins++;
+
+      document.getElementById('spins').textContent=totalSpins;
+      document.getElementById('spinBtn').disabled=false;
+      document.getElementById('info').textContent='Выбор сделан ✦';
+
+      if(navigator.vibrate) {
+        navigator.vibrate([100,50,150]);
+      }
+
+      showWinner(options[winnerIndex]);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+/* =================================
+   ПОБЕДИТЕЛЬ
+================================= */
+
+function showWinner(text) {
+
+  document.getElementById('winnerText').textContent=text;
+
+  document.getElementById('modalBg').classList.add('show');
+
+  confetti();
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('show');
+}
+
+function removeWinner() {
+
+  if(winnerIndex<0) return;
+
+  options.splice(winnerIndex,1);
+
+  winnerIndex=-1;
+
+  if(options.length===0) {
+    options=['Вариант 1','Вариант 2'];
+  }
+
+  updateUI();
+
+  closeModal();
+}
+
+/* =================================
+   КОНФЕТТИ
+================================= */
+
+function confetti() {
+
+  const colors=[
+    '#a78bfa',
+    '#22d3ee',
+    '#f472b6',
+    '#facc15',
+    '#4ade80'
+  ];
+
+  for(let i=0;i<65;i++) {
+
+    const el=document.createElement('div');
+
+    el.className='confetti';
+
+    el.style.left=Math.random()*100+'vw';
+    el.style.top='-15px';
+    el.style.background=colors[i%colors.length];
+
+    el.style.setProperty(
+      '--x',
+      (Math.random()-.5)*300+'px'
+    );
+
+    document.body.appendChild(el);
+
+    setTimeout(()=>el.remove(),3500);
+  }
+}
+
+/* =================================
+   ПАНЕЛЬ
+================================= */
+
+function openDrawer() {
+  renderEditor();
+
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+/* =================================
+   ЗАПУСК
+================================= */
+
+window.addEventListener('resize',resizeCanvas);
+
+resizeCanvas();
+updateUI();
+
+</script>
+</body>
+</html>
+
